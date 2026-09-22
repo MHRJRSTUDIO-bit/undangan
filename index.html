@@ -422,7 +422,10 @@
     <small>Made with love • 2026</small>
   </footer>
 
-  <script>
+
+<script src="config.js"></script>
+
+<script>
     /* =========================================
        1. NAMA TAMU DARI URL
        Contoh:
@@ -511,25 +514,60 @@
        Untuk penyimpanan online semua tamu,
        hubungkan ke Supabase/Firebase/backend.
        ========================================= */
-    document.getElementById("rsvpForm").addEventListener("submit", function(e){
-      e.preventDefault();
+   document.getElementById("rsvpForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
 
-      const name = document.getElementById("name").value.trim();
-      const attendance = document.getElementById("attendance").value;
-      const message = document.getElementById("message").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const attendance = document.getElementById("attendance").value;
+  const message = document.getElementById("message").value.trim();
 
-      const item = document.createElement("div");
-      item.className = "message";
-      item.innerHTML = `
-        <strong>${escapeHtml(name)}</strong> — ${escapeHtml(attendance)}
-        <p>${escapeHtml(message)}</p>
-      `;
+  if (!name || !attendance || !message) {
+    alert("Mohon lengkapi semua data.");
+    return;
+  }
 
-      document.getElementById("messages").prepend(item);
-      this.reset();
-      alert("Terima kasih atas ucapan dan konfirmasinya ❤️");
-    });
+  try {
+    const response = await fetch(
+      `${window.SUPABASE_URL}/rest/v1/rsvp`,
+      {
+        method: "POST",
+        headers: {
+          "apikey": window.SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${window.SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          name: name,
+          attendance: attendance,
+          message: message
+        })
+      }
+    );
 
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const item = document.createElement("div");
+    item.className = "message";
+
+    item.innerHTML = `
+      <strong>${escapeHtml(name)}</strong> — ${escapeHtml(attendance)}
+      <p>${escapeHtml(message)}</p>
+    `;
+
+    document.getElementById("messages").prepend(item);
+
+    this.reset();
+
+    alert("Ucapan berhasil dikirim ❤️");
+
+  } catch (error) {
+    console.error("Supabase error:", error);
+    alert("Gagal mengirim ucapan. Silakan coba lagi.");
+  }
+});
     function escapeHtml(text){
       const div = document.createElement("div");
       div.textContent = text;
